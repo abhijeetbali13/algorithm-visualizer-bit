@@ -54,16 +54,48 @@ function heapifyDown(a, heapSize, i, steps, snap, hs, phase) {
 }
 
 // Compute tree positions for array-based binary heap
-function getNodePositions(n, W=520, H=200) {
-  const pos = [];
+function getNodePositions(n) {
+  const positions = [];
+
   const maxDepth = Math.floor(Math.log2(n));
+
+  const width = Math.max(
+    800,
+    Math.pow(2, maxDepth) * 120
+  );
+
+  const levelGap = 110;
+
+  const height = Math.max(
+    300,
+    (maxDepth + 1) * levelGap + 100
+  );
+
   for (let i = 0; i < n; i++) {
-    const depth = Math.floor(Math.log2(i+1));
-    const posInRow = i - (Math.pow(2,depth)-1);
-    const nodesInRow = Math.pow(2,depth);
-    pos.push({ x: W * (posInRow+1)/(nodesInRow+1), y: 24 + depth * (H-24)/Math.max(maxDepth,1) });
+    const depth = Math.floor(Math.log2(i + 1));
+
+    const posInRow =
+      i - (Math.pow(2, depth) - 1);
+
+    const nodesInRow =
+      Math.pow(2, depth);
+
+    positions.push({
+      x:
+        width *
+        (posInRow + 1) /
+        (nodesInRow + 1),
+
+      y:
+        60 + depth * levelGap
+    });
   }
-  return pos;
+
+  return {
+    positions,
+    width,
+    height
+  };
 }
 
 export default function HeapSort() {
@@ -78,7 +110,11 @@ export default function HeapSort() {
   const swapPair   = current?.swapPair  || null;
   const phase      = current?.phase || '';
   const n = displayArr.length;
-  const positions = getNodePositions(n);
+  const {
+  positions,
+  height: treeHeight,
+  width: treeWidth
+} = getNodePositions(n);
   const maxVal = Math.max(...displayArr, 1);
 
   const nodeColor = (i) => {
@@ -107,32 +143,111 @@ export default function HeapSort() {
             <div className="status-bar">{current ? current.msg : 'Press Start or step through manually'}</div>
 
             {/* Binary tree visualization */}
-            <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', padding:16 }}>
-              <div className="section-label">Binary Heap Tree</div>
-              <svg viewBox="0 0 520 200" style={{ width:'100%', height:'auto' }}>
-                {displayArr.map((_, i) => {
-                  const l=2*i+1, r=2*i+2;
-                  return (
-                    <g key={`e${i}`}>
-                      {l<n && positions[l] && <line x1={positions[i].x} y1={positions[i].y} x2={positions[l].x} y2={positions[l].y} stroke={l>=heapSize?'var(--green)':'var(--border)'} strokeWidth="1.5"/>}
-                      {r<n && positions[r] && <line x1={positions[i].x} y1={positions[i].y} x2={positions[r].x} y2={positions[r].y} stroke={r>=heapSize?'var(--green)':'var(--border)'} strokeWidth="1.5"/>}
-                    </g>
-                  );
-                })}
-                {displayArr.map((val,i) => {
-                  if (!positions[i]) return null;
-                  const { x, y } = positions[i];
-                  const fill = nodeColor(i);
-                  return (
-                    <g key={i}>
-                      <circle cx={x} cy={y} r={18} fill={fill} opacity={i>=heapSize?0.7:1}/>
-                      <text x={x} y={y+5} textAnchor="middle" fontSize="11" fontFamily="JetBrains Mono" fill={fill==='var(--green)'?'#0b0f1a':'#0b0f1a'} fontWeight="700">{val}</text>
-                      <text x={x} y={y+30} textAnchor="middle" fontSize="9" fontFamily="JetBrains Mono" fill="var(--muted)">[{i}]</text>
-                    </g>
-                  );
-                })}
-              </svg>
-            </div>
+            <div
+                style={{
+                  background: 'var(--surface)',
+                  border: '1px solid var(--border)',
+                  borderRadius: 'var(--radius-lg)',
+                  padding: 16
+                }}
+              >
+                <div className="section-label">
+                  Binary Heap Tree
+                </div>
+
+                <div
+                  style={{
+                    overflowY: 'auto',
+                    overflowX: 'hidden',
+                    maxHeight: '550px'
+                  }}
+                >
+                  <svg
+                    viewBox={`0 0 ${treeWidth} ${treeHeight}`}
+                    style={{
+                      width: '100%',
+                      height: 'auto',
+                      display: 'block'
+                    }}
+                  >
+                    {displayArr.map((_, i) => {
+                      const l = 2 * i + 1;
+                      const r = 2 * i + 2;
+
+                      return (
+                        <g key={`e${i}`}>
+                          {l < n && (
+                            <line
+                              x1={positions[i].x}
+                              y1={positions[i].y}
+                              x2={positions[l].x}
+                              y2={positions[l].y}
+                              stroke={
+                                l >= heapSize
+                                  ? 'var(--green)'
+                                  : 'var(--border)'
+                              }
+                              strokeWidth="2"
+                            />
+                          )}
+
+                          {r < n && (
+                            <line
+                              x1={positions[i].x}
+                              y1={positions[i].y}
+                              x2={positions[r].x}
+                              y2={positions[r].y}
+                              stroke={
+                                r >= heapSize
+                                  ? 'var(--green)'
+                                  : 'var(--border)'
+                              }
+                              strokeWidth="2"
+                            />
+                          )}
+                        </g>
+                      );
+                    })}
+
+                    {displayArr.map((val, i) => {
+                      const fill = nodeColor(i);
+
+                      return (
+                        <g key={i}>
+                          <circle
+                            cx={positions[i].x}
+                            cy={positions[i].y}
+                            r="30"
+                            fill={fill}
+                            opacity={i >= heapSize ? 0.7 : 1}
+                          />
+
+                          <text
+                            x={positions[i].x}
+                            y={positions[i].y + 7}
+                            textAnchor="middle"
+                            fontSize="18"
+                            fontWeight="700"
+                            fill="#0b0f1a"
+                          >
+                            {val}
+                          </text>
+
+                          <text
+                            x={positions[i].x}
+                            y={positions[i].y + 48}
+                            textAnchor="middle"
+                            fontSize="12"
+                            fill="var(--muted)"
+                          >
+                            [{i}]
+                          </text>
+                        </g>
+                      );
+                    })}
+                  </svg>
+                </div>
+              </div>
 
             {/* Array bars */}
             <div style={{ background:'var(--surface)', border:'1px solid var(--border)', borderRadius:'var(--radius-lg)', padding:'20px 16px', marginTop:16, display:'flex', alignItems:'flex-end', gap:4, minHeight:120 }}>
@@ -181,3 +296,4 @@ export default function HeapSort() {
     </div>
   );
 }
+
