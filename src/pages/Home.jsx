@@ -2,12 +2,52 @@ import AlgorithmCard from '../components/AlgorithmCard';
 
 const algorithms = [
   { title:'Bubble Sort',     category:'Sorting',             to:'/bubble-sort', color:'#00d4ff', description:'Compare adjacent elements and swap if out of order. Each pass bubbles the largest element to its correct final position.', complexity:{time:'O(n²)',space:'O(1)'} },
+  {
+  title:'Insertion Sort',
+  category:'Sorting',
+  to:'/insertion-sort',
+  color:'#60a5fa',
+  description:'Builds a sorted array one element at a time by inserting each element into its correct position.',
+  complexity:{time:'O(n²)',space:'O(1)'}
+},
   { title:'Merge Sort',      category:'Sorting',             to:'/merge-sort',  color:'#a78bfa', description:'Divide recursively into halves, then merge sorted halves. Includes live recursion tree showing every split and merge.', complexity:{time:'O(n log n)',space:'O(n)'} },
   { title:'Heap Sort',       category:'Sorting',             to:'/heap-sort',   color:'#fb923c', description:'Build a max-heap, then extract maximum repeatedly. Visualized as a binary tree with heapify steps.', complexity:{time:'O(n log n)',space:'O(1)'} },
   { title:"Dijkstra's",      category:'Graph',               to:'/dijkstra',    color:'#34d399', description:'Shortest paths from a source node. Every step explains why a node is chosen and whether an edge relaxation improves the distance.', complexity:{time:'O((V+E) log V)',space:'O(V)'} },
   { title:"Prim's",          category:'Graph · MST',         to:'/prims',       color:'#22d3ee', description:'Minimum Spanning Tree by greedily adding the cheapest edge connecting a new node to the current MST.', complexity:{time:'O(E log V)',space:'O(V)'} },
   { title:"Kruskal's",       category:'Graph · MST',         to:'/kruskal',     color:'#4ade80', description:'Sort all edges, then greedily add cheapest non-cycle edges. Uses Union-Find to detect cycles. Shows sorted edge list.', complexity:{time:'O(E log E)',space:'O(V+E)'} },
-  { title:'0/1 Knapsack',    category:'Dynamic Programming', to:'/knapsack',    color:'#fbbf24', description:'Maximize value within weight capacity. Switch between DP table construction and naive brute-force showing all 2ⁿ subsets.', complexity:{time:'O(nW)',space:'O(nW)'} },
+  {
+  title:'Fractional Knapsack',
+  category:'Greedy',
+  to:'/fractional-knapsack',
+  color:'#facc15',
+  description:'Greedy approach allowing fractions of items.',
+  complexity:{time:'O(n log n)',space:'O(1)'}
+},
+{
+  title:'Activity Selection',
+  category:'Greedy',
+  to:'/activity-selection',
+  color:'#22c55e',
+  description:'Select maximum compatible activities using a greedy strategy.',
+  complexity:{time:'O(n log n)',space:'O(1)'}
+}, 
+{ title:'0/1 Knapsack',    category:'Dynamic Programming', to:'/knapsack',    color:'#fbbf24', description:'Maximize value within weight capacity. Switch between DP table construction and naive brute-force showing all 2ⁿ subsets.', complexity:{time:'O(nW)',space:'O(nW)'} },
+{
+  title:'Longest Common Subsequence',
+  category:'Dynamic Programming',
+  to:'/lcs',
+  color:'#a78bfa',
+  description:'Find the longest subsequence common to two strings.',
+  complexity:{time:'O(mn)',space:'O(mn)'}
+},
+{
+  title:'Floyd Warshall',
+  category:'Graph',
+  to:'/floyd-warshall',
+  color:'#38bdf8',
+  description:'Finds shortest paths between every pair of vertices.',
+  complexity:{time:'O(V³)',space:'O(V²)'}
+},
   { title:'N-Queens',        category:'Backtracking',        to:'/n-queens',    color:'#f87171', description:'Place N queens so none attack each other. Watch backtracking in real time with queen placement and removal on the board.', complexity:{time:'O(N!)',space:'O(N)'} },
   { title:'Huffman Coding',  category:'Greedy · Compression',to:'/huffman',     color:'#e879f9', description:'Variable-length prefix codes for lossless compression. Watch the Huffman tree grow and see compression ratios.', complexity:{time:'O(n log n)',space:'O(n)'} },
   { title:'Horspool',        category:'String Matching',     to:'/horspool',    color:'#f472b6', description:'Simplified Boyer-Moore variant. Visualizes shift table construction and how mismatches skip large portions of text.', complexity:{time:'O(n)',space:'O(σ)'} },

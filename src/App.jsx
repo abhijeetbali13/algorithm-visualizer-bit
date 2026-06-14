@@ -13,6 +13,11 @@ import Huffman from './pages/Huffman';
 import Horspool from './pages/Horspool';
 import BoyerMoore from './pages/BoyerMoore';
 import HeapSort from './pages/HeapSort';
+import InsertionSort from './pages/InsertionSort';
+import FloydWarshall from './pages/FloydWarshall';
+import FractionalKnapsack from './pages/FractionalKnapsack';
+import ActivitySelection from './pages/ActivitySelection';
+import Lcs from './pages/Lcs';
 
 export default function App() {
   return (
@@ -33,6 +38,11 @@ export default function App() {
             <Route path="/huffman" element={<Huffman/>}/>
             <Route path="/horspool" element={<Horspool/>}/>
             <Route path="/boyer-moore" element={<BoyerMoore/>}/>
+            <Route path="/insertion-sort" element={<InsertionSort/>}/>
+            <Route path="/floyd-warshall" element={<FloydWarshall/>}/>
+            <Route path="/fractional-knapsack" element={<FractionalKnapsack/>}/>
+            <Route path="/lcs" element={<Lcs/>}/>
+            <Route path="/activity-selection" element={<ActivitySelection/>}/>
           </Routes>
         </main>
         <Footer/>

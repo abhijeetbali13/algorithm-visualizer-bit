@@ -2,10 +2,10 @@ import { Link, useLocation } from 'react-router-dom';
 import { useState } from 'react';
 
 const groups = [
-  { label:'Sorting',     links:[{ to:'/bubble-sort', label:'Bubble Sort' },{ to:'/merge-sort', label:'Merge Sort' },{ to:'/heap-sort', label:'Heap Sort' }] },
-  { label:'Graph / MST', links:[{ to:'/dijkstra', label:"Dijkstra's" },{ to:'/prims', label:"Prim's" },{ to:'/kruskal', label:"Kruskal's" }] },
-  { label:'DP / BT',     links:[{ to:'/knapsack', label:'Knapsack' },{ to:'/n-queens', label:'N-Queens' }] },
-  { label:'Greedy',      links:[{ to:'/huffman', label:'Huffman' }] },
+  { label:'Sorting',     links:[{ to:'/bubble-sort', label:'Bubble Sort' },{ to:'/insertion-sort', label:'Insertion Sort' },{ to:'/merge-sort', label:'Merge Sort' },{ to:'/heap-sort', label:'Heap Sort' }] },
+  { label:'Graph / MST', links:[{ to:'/dijkstra', label:"Dijkstra's" },{ to:'/prims', label:"Prim's" },{ to:'/kruskal', label:"Kruskal's" },{ to:'/floyd-warshall', label:'Floyd Warshall' }] },
+  { label:'DP / BT',     links:[{ to:'/knapsack', label:'Knapsack' },{ to:'/n-queens', label:'N-Queens' },{ to:'/lcs', label:'LCS' }] },
+  { label:'Greedy',      links:[{ to:'/huffman', label:'Huffman' },{ to:'/fractional-knapsack', label:'Fractional Knapsack' },{ to:'/activity-selection', label:'Activity Selection' }] },
   { label:'Strings',     links:[{ to:'/horspool', label:'Horspool' },{ to:'/boyer-moore', label:'Boyer-Moore' }] },
 ];
 
