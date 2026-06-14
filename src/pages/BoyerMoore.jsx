@@ -22,21 +22,36 @@ function buildBadCharStd(pattern) {
 
 function buildGoodSuffix(pattern) {
   const m = pattern.length;
-  const shift = Array(m + 1).fill(m);
-  const border = Array(m + 1).fill(0);
-  let last = m;
-  for (let i = m - 1; i >= 0; i--) {
-    while (last <= m - 1 && pattern[i] !== pattern[last - 1]) {
-      if (shift[last] === m) shift[last] = last - i;
-      last = border[last];
+  const shift = new Array(m + 1).fill(0);
+  const bpos = new Array(m + 1).fill(0);
+
+  let i = m;
+  let j = m + 1;
+  bpos[i] = j;
+
+  while (i > 0) {
+    while (j <= m && pattern[i - 1] !== pattern[j - 1]) {
+      if (shift[j] === 0) {
+        shift[j] = j - i;
+      }
+      j = bpos[j];
     }
-    border[i] = --last;
+    i--;
+    j--;
+    bpos[i] = j;
   }
-  last = border[0];
-  for (let i = 0; i <= m; i++) {
-    if (shift[i] === m) shift[i] = last;
-    if (i === last) last = border[last];
+
+  j = bpos[0];
+
+  for (i = 0; i <= m; i++) {
+    if (shift[i] === 0) {
+      shift[i] = j;
+    }
+    if (i === j) {
+      j = bpos[j];
+    }
   }
+
   return shift;
 }
 
@@ -44,6 +59,7 @@ function standardSteps(text, pattern) {
   const n = text.length, m = pattern.length;
   const badChar    = buildBadCharStd(pattern);
   const goodSuffix = buildGoodSuffix(pattern);
+
   const steps = [];
   const matches = [];
 
@@ -55,17 +71,33 @@ function standardSteps(text, pattern) {
     while (j >= 0 && pattern[j] === text[s + j]) j--;
 
     if (j < 0) {
-      matches.push(s);
-      const shift = goodSuffix[0];
-      steps.push({ alignAt:s, textPos:s+m-1, patPos:-1, k:m, badChar, goodSuffix, matches:[...matches], d1:null, d2:shift, finalShift:shift, chosen:'match', msg:`✓ Full match at index ${s}! Shift by goodSuffix[0]=${shift}` });
-      s += shift;
-    } else {
+  matches.push(s);
+
+  const shift = Math.max(1, goodSuffix[0]);
+
+  steps.push({
+    alignAt:s,
+    textPos:s+m-1,
+    patPos:-1,
+    k:m,
+    badChar,
+    goodSuffix,
+    matches:[...matches],
+    d1:null,
+    d2:shift,
+    finalShift:shift,
+    chosen:'match',
+    msg:`✓ Full match at index ${s}! Shift by goodSuffix[0]=${shift}`
+  });
+
+  s += shift;
+} else {
       const k = m - 1 - j;           // number of chars matched from right
       const c = text[s + j];
       const t1c = badChar[c] ?? -1;
       const d1 = Math.max(1, j - t1c);   // standard: j - lastOcc, not t1(c)-k
-      const d2 = goodSuffix[j + 1];
-      const finalShift = Math.max(d1, d2);
+      const d2 = Math.max(1, goodSuffix[j + 1]);
+const finalShift = Math.max(1, d1, d2);
       const chosen = d1 >= d2 ? 'd1' : 'd2';
 
       steps.push({
@@ -164,8 +196,12 @@ function textbookSteps(text, pattern) {
 export default function BoyerMoore() {
   const [presetIdx, setPresetIdx] = useState(0);
   const [variant, setVariant]     = useState('textbook'); // 'standard' | 'textbook'
+  const [custom, setCustom] = useState(null); // { text, pattern } | null
+  const [textInput, setTextInput] = useState('');
+  const [patternInput, setPatternInput] = useState('');
+  const [inputError, setInputError] = useState('');
 
-  const { text, pattern } = PRESETS[presetIdx];
+  const { text, pattern } = custom !== null ? custom : PRESETS[presetIdx];
 
   const stdViz = useVisualizer(() => standardSteps(text, pattern));
   const tbViz  = useVisualizer(() => textbookSteps(text, pattern));
@@ -174,7 +210,38 @@ export default function BoyerMoore() {
   const { current, steps, stepIdx, running, speed, setSpeed, start, pause, prev, next, reset } = viz;
 
   const switchVariant = v => { stdViz.reset(); tbViz.reset(); setVariant(v); };
-  const switchPreset  = i => { stdViz.reset(); tbViz.reset(); setPresetIdx(i); };
+  const switchPreset  = i => { stdViz.reset(); tbViz.reset(); setCustom(null); setPresetIdx(i); };
+
+  const applyCustom = () => {
+    const t = textInput.trim();
+    const p = patternInput.trim();
+
+    if (t.length === 0 || p.length === 0) {
+      setInputError('Enter both a text and a pattern.');
+      return;
+    }
+    if (p.length < 1 || p.length > 12) {
+      setInputError('Pattern must be 1–12 characters.');
+      return;
+    }
+    if (p.length > t.length) {
+      setInputError('Pattern cannot be longer than the text.');
+      return;
+    }
+    if (t.length > 60) {
+      setInputError('Text must be 60 characters or fewer.');
+      return;
+    }
+
+    setInputError('');
+    stdViz.reset();
+    tbViz.reset();
+    setCustom({ text: t, pattern: p });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') applyCustom();
+  };
 
   /* ── shared display values ── */
   const alignAt  = current?.alignAt  ?? -1;
@@ -357,6 +424,65 @@ export default function BoyerMoore() {
                 </div>
               </div>
             </div>
+
+            {/* Custom text/pattern input */}
+            <div className="controls-panel" style={{ marginTop: 16 }}>
+              <h3>Custom Text & Pattern</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <input
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Text, e.g. ABCBABCABCABC"
+                  disabled={running}
+                  style={{
+                    flex: 2,
+                    minWidth: 200,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <input
+                  type="text"
+                  value={patternInput}
+                  onChange={(e) => setPatternInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Pattern, e.g. ABCABC"
+                  disabled={running}
+                  style={{
+                    flex: 1,
+                    minWidth: 120,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={applyCustom}
+                  disabled={running}
+                  className="btn"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Apply
+                </button>
+              </div>
+              {inputError && (
+                <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 4 }}>{inputError}</div>
+              )}
+              <div style={{ color: 'var(--muted)', fontSize: 12 }}>
+                Text ≤60 chars, pattern 1–12 chars and no longer than the text. Press Apply or Enter.
+              </div>
+            </div>
           </div>
 
           {/* Right sidebar */}
@@ -366,7 +492,7 @@ export default function BoyerMoore() {
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {PRESETS.map((p,i)=>(
                   <button key={i} onClick={()=>switchPreset(i)} className="btn btn-secondary"
-                    style={{ fontSize:11, textAlign:'left', background:presetIdx===i?'rgba(0,212,255,0.1)':'', borderColor:presetIdx===i?'var(--accent)':'', color:presetIdx===i?'var(--accent)':'' }}>
+                    style={{ fontSize:11, textAlign:'left', background:(custom===null && presetIdx===i)?'rgba(0,212,255,0.1)':'', borderColor:(custom===null && presetIdx===i)?'var(--accent)':'', color:(custom===null && presetIdx===i)?'var(--accent)':'' }}>
                     pat: "{p.pattern}"
                   </button>
                 ))}

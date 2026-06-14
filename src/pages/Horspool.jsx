@@ -60,9 +60,50 @@ function horspoolSteps(text, pattern) {
 
 export default function Horspool() {
   const [presetIdx, setPresetIdx] = useState(0);
-  const { text, pattern } = PRESETS[presetIdx];
+  const [custom, setCustom] = useState(null); // { text, pattern } | null
+  const [textInput, setTextInput] = useState('');
+  const [patternInput, setPatternInput] = useState('');
+  const [inputError, setInputError] = useState('');
+
+  const { text, pattern } = custom !== null ? custom : PRESETS[presetIdx];
   const viz = useVisualizer(() => horspoolSteps(text, pattern));
   const { current, steps, stepIdx, running, speed, setSpeed, start, pause, prev, next, reset } = viz;
+
+  const applyCustom = () => {
+    const t = textInput.trim();
+    const p = patternInput.trim();
+
+    if (t.length === 0 || p.length === 0) {
+      setInputError('Enter both a text and a pattern.');
+      return;
+    }
+    if (p.length > t.length) {
+      setInputError('Pattern cannot be longer than the text.');
+      return;
+    }
+    if (p.length < 1 || p.length > 12) {
+      setInputError('Pattern must be 1–12 characters.');
+      return;
+    }
+    if (t.length > 60) {
+      setInputError('Text must be 60 characters or fewer.');
+      return;
+    }
+
+    setInputError('');
+    reset();
+    setCustom({ text: t, pattern: p });
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') applyCustom();
+  };
+
+  const selectPreset = (i) => {
+    reset();
+    setCustom(null);
+    setPresetIdx(i);
+  };
 
   const shiftTable = current?.shiftTable || buildShiftTable(pattern);
   const alignAt    = current?.alignAt ?? -1;
@@ -162,6 +203,65 @@ export default function Horspool() {
                 Formula: shift(c) = m-1-lastIndex(c) for c in pattern[0..m-2], else m
               </div>
             </div>
+
+            {/* Custom text/pattern input */}
+            <div className="controls-panel" style={{ marginTop: 16 }}>
+              <h3>Custom Text & Pattern</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <input
+                  type="text"
+                  value={textInput}
+                  onChange={(e) => setTextInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Text, e.g. ABCBABCABCABC"
+                  disabled={running}
+                  style={{
+                    flex: 2,
+                    minWidth: 200,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <input
+                  type="text"
+                  value={patternInput}
+                  onChange={(e) => setPatternInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Pattern, e.g. ABCABC"
+                  disabled={running}
+                  style={{
+                    flex: 1,
+                    minWidth: 120,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={applyCustom}
+                  disabled={running}
+                  className="btn"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Apply
+                </button>
+              </div>
+              {inputError && (
+                <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 4 }}>{inputError}</div>
+              )}
+              <div style={{ color: 'var(--muted)', fontSize: 12 }}>
+                Text ≤60 chars, pattern 1–12 chars and no longer than the text. Press Apply or Enter.
+              </div>
+            </div>
           </div>
 
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
@@ -169,8 +269,8 @@ export default function Horspool() {
               <h3>Preset</h3>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {PRESETS.map((p,i) => (
-                  <button key={i} onClick={() => { reset(); setPresetIdx(i); }} className="btn btn-secondary"
-                    style={{ fontSize:11, textAlign:'left', background:presetIdx===i?'rgba(0,212,255,0.1)':'', borderColor:presetIdx===i?'var(--accent)':'', color:presetIdx===i?'var(--accent)':'' }}>
+                  <button key={i} onClick={() => selectPreset(i)} className="btn btn-secondary"
+                    style={{ fontSize:11, textAlign:'left', background:(custom===null && presetIdx===i)?'rgba(0,212,255,0.1)':'', borderColor:(custom===null && presetIdx===i)?'var(--accent)':'', color:(custom===null && presetIdx===i)?'var(--accent)':'' }}>
                     Pattern: "{p.pattern}"
                   </button>
                 ))}

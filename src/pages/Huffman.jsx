@@ -79,11 +79,50 @@ function layoutTree(allNodes, rootId, W=540, H=220) {
 
 export default function Huffman() {
   const [presetIdx, setPresetIdx] = useState(0);
-  const text = PRESETS[presetIdx].text;
+  const [customText, setCustomText] = useState(null);
+  const [inputValue, setInputValue] = useState('');
+  const [inputError, setInputError] = useState('');
+
+  const text = customText !== null ? customText : PRESETS[presetIdx].text;
 
   const result = huffmanSteps(text);
   const viz = useVisualizer(() => result.steps);
   const { current, steps, stepIdx, running, speed, setSpeed, start, pause, prev, next, reset } = viz;
+
+  const applyCustomText = () => {
+    const trimmed = inputValue.trim();
+    if (trimmed.length < 2) {
+      setInputError('Enter at least 2 characters.');
+      return;
+    }
+    if (trimmed.length > 40) {
+      setInputError('Please enter 40 characters or fewer.');
+      return;
+    }
+    const uniqueChars = new Set(trimmed).size;
+    if (uniqueChars < 2) {
+      setInputError('Text needs at least 2 distinct characters.');
+      return;
+    }
+    if (uniqueChars > 16) {
+      setInputError('Please use 16 distinct characters or fewer (tree gets too wide otherwise).');
+      return;
+    }
+
+    setInputError('');
+    reset();
+    setCustomText(trimmed);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') applyCustomText();
+  };
+
+  const selectPreset = (i) => {
+    reset();
+    setCustomText(null);
+    setPresetIdx(i);
+  };
 
   const allNodes = result.allNodes;
   const codes    = result.codes;
@@ -161,6 +200,46 @@ export default function Huffman() {
                 </div>
               )}
             </div>
+
+            {/* Custom text input */}
+            <div className="controls-panel" style={{ marginTop: 16 }}>
+              <h3>Custom Text</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleInputKeyDown}
+                  placeholder="e.g. HELLO WORLD"
+                  disabled={running}
+                  style={{
+                    flex: 1,
+                    minWidth: 200,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={applyCustomText}
+                  disabled={running}
+                  className="btn"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Apply
+                </button>
+              </div>
+              {inputError && (
+                <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 8 }}>{inputError}</div>
+              )}
+              <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 8 }}>
+                Enter 2–40 characters with 2–16 distinct symbols, then click Apply or press Enter.
+              </div>
+            </div>
           </div>
 
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
@@ -168,8 +247,8 @@ export default function Huffman() {
               <h3>Preset Text</h3>
               <div style={{ display:'flex', flexDirection:'column', gap:6 }}>
                 {PRESETS.map((p,i) => (
-                  <button key={i} onClick={() => { reset(); setPresetIdx(i); }} className="btn btn-secondary"
-                    style={{ fontSize:12, background:presetIdx===i?'rgba(0,212,255,0.1)':'', borderColor:presetIdx===i?'var(--accent)':'', color:presetIdx===i?'var(--accent)':'' }}>
+                  <button key={i} onClick={() => selectPreset(i)} className="btn btn-secondary"
+                    style={{ fontSize:12, background:(customText===null && presetIdx===i)?'rgba(0,212,255,0.1)':'', borderColor:(customText===null && presetIdx===i)?'var(--accent)':'', color:(customText===null && presetIdx===i)?'var(--accent)':'' }}>
                     {p.name}: "{p.text}"
                   </button>
                 ))}

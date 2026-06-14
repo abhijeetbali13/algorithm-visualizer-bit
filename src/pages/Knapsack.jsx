@@ -53,18 +53,85 @@ function naiveSteps(items, W) {
 export default function Knapsack() {
   const [preset, setPreset] = useState(0);
   const [mode, setMode] = useState('dp');
+  const [customSet, setCustomSet] = useState(null); // { name, items, capacity } | null
+  const [itemsInput, setItemsInput] = useState('');
+  const [capacityInput, setCapacityInput] = useState('');
+  const [inputError, setInputError] = useState('');
+
   const modeRef = useRef('dp');
   const presetRef = useRef(0);
+  const customRef = useRef(null);
 
-  const { items, capacity } = PRESETS[preset];
+  const allSets = customSet ? [...PRESETS, customSet] : PRESETS;
+  const { items, capacity } = allSets[preset];
 
-  const viz = useVisualizer(() =>
-    modeRef.current === 'dp' ? dpSteps(PRESETS[presetRef.current].items, PRESETS[presetRef.current].capacity) : naiveSteps(PRESETS[presetRef.current].items, PRESETS[presetRef.current].capacity)
-  );
+  const viz = useVisualizer(() => {
+    const set = customRef.current && presetRef.current === PRESETS.length ? customRef.current : PRESETS[presetRef.current];
+    return modeRef.current === 'dp' ? dpSteps(set.items, set.capacity) : naiveSteps(set.items, set.capacity);
+  });
   const { current, steps, stepIdx, running, speed, setSpeed, start, pause, prev, next, reset } = viz;
 
   const switchMode = m => { modeRef.current = m; viz.reset(); setMode(m); };
   const switchPreset = p => { presetRef.current = p; viz.reset(); setPreset(p); };
+
+  // Parse format: "Book:2:3, Laptop:3:4, Phone:4:5" name:weight:value, plus capacity
+  const applyCustom = () => {
+    const tokens = itemsInput.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    const cap = Number(capacityInput.trim());
+
+    if (tokens.length === 0) {
+      setInputError('Enter at least one item, e.g. Book:2:3, Laptop:3:4');
+      return;
+    }
+    if (tokens.length > 15) {
+      setInputError('Please enter 15 items or fewer (brute force is 2ⁿ).');
+      return;
+    }
+    if (!Number.isFinite(cap) || cap < 1 || cap > 50) {
+      setInputError('Capacity must be a number between 1 and 50.');
+      return;
+    }
+
+    const items = [];
+    for (const tok of tokens) {
+      const parts = tok.split(':').map(s => s.trim());
+      if (parts.length !== 3) {
+        setInputError(`"${tok}" is invalid. Use format Name:Weight:Value, e.g. Book:2:3`);
+        return;
+      }
+      const [name, wStr, vStr] = parts;
+      const weight = Number(wStr), value = Number(vStr);
+      if (!name) {
+        setInputError(`Item "${tok}" needs a name.`);
+        return;
+      }
+      if (!Number.isFinite(weight) || weight <= 0 || !Number.isInteger(weight)) {
+        setInputError(`Item "${name}": weight must be a positive integer.`);
+        return;
+      }
+      if (!Number.isFinite(value) || value <= 0) {
+        setInputError(`Item "${name}": value must be a positive number.`);
+        return;
+      }
+      if (weight > cap) {
+        setInputError(`Item "${name}": weight (${weight}) exceeds capacity (${cap}).`);
+        return;
+      }
+      items.push({ name, weight: Math.round(weight), value: Math.round(value * 100) / 100 });
+    }
+
+    setInputError('');
+    viz.reset();
+    const newSet = { name: 'Custom', items, capacity: Math.round(cap) };
+    setCustomSet(newSet);
+    customRef.current = newSet;
+    presetRef.current = PRESETS.length;
+    setPreset(PRESETS.length);
+  };
+
+  const handleKeyDown = (e) => {
+    if (e.key === 'Enter') applyCustom();
+  };
 
   const dp = current?.dp || null;
   const activeCell = current?.cell || null;
@@ -167,15 +234,74 @@ export default function Knapsack() {
                 ) : <div style={{ color:'var(--muted)', fontSize:13, padding:'16px 0', textAlign:'center' }}>Subset evaluations appear here →</div>}
               </div>
             )}
+
+            {/* Custom items input */}
+            <div className="controls-panel" style={{ marginTop: 16 }}>
+              <h3>Custom Items</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 8 }}>
+                <input
+                  type="text"
+                  value={itemsInput}
+                  onChange={(e) => setItemsInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Items as Name:Weight:Value, e.g. Book:2:3, Laptop:3:4"
+                  disabled={running}
+                  style={{
+                    flex: 3,
+                    minWidth: 240,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <input
+                  type="text"
+                  value={capacityInput}
+                  onChange={(e) => setCapacityInput(e.target.value)}
+                  onKeyDown={handleKeyDown}
+                  placeholder="Capacity"
+                  disabled={running}
+                  style={{
+                    flex: 1,
+                    minWidth: 90,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={applyCustom}
+                  disabled={running}
+                  className="btn"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Apply
+                </button>
+              </div>
+              {inputError && (
+                <div style={{ color: 'var(--red)', fontSize: 12, marginBottom: 4 }}>{inputError}</div>
+              )}
+              <div style={{ color: 'var(--muted)', fontSize: 12 }}>
+                Up to 15 items as Name:Weight:Value (positive integers/numbers, weight ≤ capacity). Capacity 1–50. Press Apply or Enter.
+              </div>
+            </div>
           </div>
 
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             <div className="controls-panel">
               <h3>Preset</h3>
-              <div style={{ display:'flex', gap:8 }}>
-                {PRESETS.map((p,i)=>(
+              <div style={{ display:'flex', gap:8, flexWrap:'wrap' }}>
+                {allSets.map((p,i)=>(
                   <button key={i} onClick={()=>switchPreset(i)} className="btn btn-secondary"
-                    style={{ flex:1, fontSize:12, background:preset===i?'rgba(0,212,255,0.1)':'', borderColor:preset===i?'var(--accent)':'', color:preset===i?'var(--accent)':'' }}>
+                    style={{ flex:'1 1 auto', fontSize:12, background:preset===i?'rgba(0,212,255,0.1)':'', borderColor:preset===i?'var(--accent)':'', color:preset===i?'var(--accent)':'' }}>
                     {p.name}
                   </button>
                 ))}

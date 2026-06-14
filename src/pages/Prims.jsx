@@ -15,6 +15,17 @@ const GRAPHS = [
   },
 ];
 
+// Layout nodes evenly around an ellipse for custom graphs
+function layoutNodes(labels) {
+  const n = labels.length;
+  const cx = 290, cy = 180, rx = 220, ry = 130;
+  if (n === 1) return [{ id: 0, label: labels[0], x: cx, y: cy }];
+  return labels.map((label, i) => {
+    const angle = (2 * Math.PI * i) / n - Math.PI / 2;
+    return { id: i, label, x: Math.round(cx + rx * Math.cos(angle)), y: Math.round(cy + ry * Math.sin(angle)) };
+  });
+}
+
 function primSteps(graph, src) {
   const n = graph.nodes.length;
   const inMST = Array(n).fill(false);
@@ -71,9 +82,76 @@ function primSteps(graph, src) {
 export default function Prims() {
   const [graphIdx, setGraphIdx] = useState(0);
   const [src, setSrc] = useState(0);
-  const graph = GRAPHS[graphIdx];
+  const [customGraph, setCustomGraph] = useState(null);
+  const [inputValue, setInputValue] = useState('');
+  const [inputError, setInputError] = useState('');
+
+  const allGraphs = customGraph ? [...GRAPHS, customGraph] : GRAPHS;
+  const graph = allGraphs[graphIdx];
+
   const viz = useVisualizer(() => primSteps(graph, src));
   const { current, steps, stepIdx, running, speed, setSpeed, start, pause, prev, next, reset } = viz;
+
+  // Parse format: "A-B:4, A-C:2, B-C:5" → builds nodes from referenced labels
+  const applyCustomGraph = () => {
+    const tokens = inputValue.split(',').map(s => s.trim()).filter(s => s.length > 0);
+    if (tokens.length === 0) {
+      setInputError('Enter at least one edge, e.g. A-B:4, B-C:2');
+      return;
+    }
+    if (tokens.length > 20) {
+      setInputError('Please enter 20 edges or fewer.');
+      return;
+    }
+
+    const labelOrder = [];
+    const labelSet = new Set();
+    const parsedEdges = [];
+
+    for (const tok of tokens) {
+      const m = tok.match(/^(\w+)\s*-\s*(\w+)\s*:\s*(-?\d+(\.\d+)?)$/);
+      if (!m) {
+        setInputError(`"${tok}" is invalid. Use format A-B:weight, e.g. A-B:4`);
+        return;
+      }
+      const [, a, b, wStr] = m;
+      const w = Number(wStr);
+      if (!Number.isFinite(w) || w < 0) {
+        setInputError(`Edge "${tok}": weight must be a non-negative number.`);
+        return;
+      }
+      if (a === b) {
+        setInputError(`Edge "${tok}": self-loops aren't allowed.`);
+        return;
+      }
+      [a, b].forEach(l => { if (!labelSet.has(l)) { labelSet.add(l); labelOrder.push(l); } });
+      parsedEdges.push({ a, b, w: Math.round(w * 100) / 100 });
+    }
+
+    if (labelOrder.length < 2) {
+      setInputError('Graph needs at least 2 distinct nodes.');
+      return;
+    }
+    if (labelOrder.length > 9) {
+      setInputError('Please use 9 nodes or fewer for a readable layout.');
+      return;
+    }
+
+    const nodes = layoutNodes(labelOrder);
+    const labelToId = Object.fromEntries(nodes.map(n => [n.label, n.id]));
+    const edges = parsedEdges.map(({ a, b, w }) => ({ u: labelToId[a], v: labelToId[b], w }));
+
+    setInputError('');
+    reset();
+    const newGraph = { name: 'Custom', nodes, edges };
+    setCustomGraph(newGraph);
+    setGraphIdx(allGraphs.length); // index of the new custom graph
+    setSrc(0);
+  };
+
+  const handleInputKeyDown = (e) => {
+    if (e.key === 'Enter') applyCustomGraph();
+  };
 
   const inMST = current?.inMST || [];
   const mstEdges = current?.mstEdges || [];
@@ -146,6 +224,46 @@ export default function Prims() {
                 </div>
               ))}
             </div>
+
+            {/* Custom graph input */}
+            <div className="controls-panel" style={{ marginTop: 16 }}>
+              <h3>Custom Graph</h3>
+              <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <input
+                  type="text"
+                  value={inputValue}
+                  onChange={(e) => setInputValue(e.target.value)}
+                  onKeyDown={handleInputKeyDown}
+                  placeholder="e.g. A-B:4, A-C:2, B-C:5, C-D:1"
+                  disabled={running}
+                  style={{
+                    flex: 1,
+                    minWidth: 220,
+                    padding: '8px 12px',
+                    borderRadius: 6,
+                    border: '1px solid var(--border, #444)',
+                    background: 'var(--bg-input, #1a1a1a)',
+                    color: 'var(--fg, #fff)',
+                    fontFamily: 'JetBrains Mono',
+                    fontSize: 13,
+                  }}
+                />
+                <button
+                  onClick={applyCustomGraph}
+                  disabled={running}
+                  className="btn"
+                  style={{ padding: '8px 16px' }}
+                >
+                  Apply
+                </button>
+              </div>
+              {inputError && (
+                <div style={{ color: 'var(--red)', fontSize: 12, marginTop: 8 }}>{inputError}</div>
+              )}
+              <div style={{ color: 'var(--muted)', fontSize: 12, marginTop: 8 }}>
+                List edges as Node-Node:Weight, comma-separated (e.g. A-B:4, B-C:2). Up to 9 nodes, 20 edges, non-negative weights.
+              </div>
+            </div>
           </div>
           <div style={{ display:'flex', flexDirection:'column', gap:16 }}>
             <div className="controls-panel">
@@ -158,10 +276,10 @@ export default function Prims() {
                   </button>
                 ))}
               </div>
-              <div style={{ display:'flex', gap:6 }}>
-                {GRAPHS.map((g,i) => (
+              <div style={{ display:'flex', gap:6, flexWrap:'wrap' }}>
+                {allGraphs.map((g,i) => (
                   <button key={i} onClick={() => { reset(); setGraphIdx(i); setSrc(0); }} className="btn btn-secondary"
-                    style={{ flex:1, fontSize:12, background:graphIdx===i?'rgba(0,212,255,0.1)':'', borderColor:graphIdx===i?'var(--accent)':'', color:graphIdx===i?'var(--accent)':'' }}>
+                    style={{ flex:'1 1 auto', fontSize:12, background:graphIdx===i?'rgba(0,212,255,0.1)':'', borderColor:graphIdx===i?'var(--accent)':'', color:graphIdx===i?'var(--accent)':'' }}>
                     {g.name}
                   </button>
                 ))}
