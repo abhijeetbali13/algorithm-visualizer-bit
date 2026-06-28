@@ -1,0 +1,214 @@
+/* ── DS shared styles ── */
+
+.ds-page {
+  padding: 32px 0 80px;
+}
+
+.ds-header {
+  margin-bottom: 24px;
+}
+
+.ds-header h1 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.9rem;
+  font-weight: 700;
+  color: var(--accent);
+  margin-bottom: 8px;
+}
+
+.ds-header p {
+  color: var(--muted);
+  font-size: 14px;
+  max-width: 640px;
+  line-height: 1.7;
+}
+
+.ds-layout {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 20px;
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .ds-layout { grid-template-columns: 1fr; }
+}
+
+.ds-canvas {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 28px 20px;
+  min-height: 180px;
+  overflow-x: auto;
+}
+
+.ds-ops-panel {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.ds-ops-panel h3 {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--muted);
+  border-bottom: 1px solid var(--border);
+  padding-bottom: 8px;
+}
+
+.ds-op-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.ds-op-group label {
+  font-size: 11px;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.ds-input {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 7px 10px;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 13px;
+  width: 100%;
+  outline: none;
+  transition: border-color 0.2s;
+}
+
+.ds-input:focus { border-color: var(--accent); }
+
+.ds-input-row {
+  display: flex;
+  gap: 6px;
+}
+
+.ds-input-row .ds-input {
+  flex: 1;
+}
+
+.ds-log {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 12px;
+  color: var(--accent);
+  min-height: 36px;
+  max-height: 80px;
+  overflow-y: auto;
+  line-height: 1.6;
+}
+
+.ds-tabs {
+  display: flex;
+  gap: 4px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.ds-tab {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  font-family: 'JetBrains Mono', monospace;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--muted);
+  transition: all 0.2s;
+}
+
+.ds-tab.active {
+  background: rgba(0,212,255,0.1);
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ds-tab:hover:not(.active) {
+  border-color: var(--muted);
+  color: var(--text);
+}
+
+.ds-info-box {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px;
+  font-size: 13px;
+  color: var(--muted);
+  line-height: 1.75;
+}
+
+.ds-info-box strong { color: var(--text); }
+.ds-info-box code {
+  background: var(--code-bg);
+  border-radius: 3px;
+  padding: 1px 5px;
+  font-size: 12px;
+  color: var(--accent);
+}
+
+.complexity-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+/* ── extras added for the rebuilt DS pages ── */
+
+.ds-canvas {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* section-label – used in Graph adjacency matrix/list headers */
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--muted);
+}
+
+/* danger button – used in Stack/Queue/LinkedList delete ops */
+.btn.btn-danger {
+  background: rgba(239,68,68,0.1);
+  border-color: var(--red);
+  color: var(--red);
+}
+.btn.btn-danger:hover:not(:disabled) {
+  background: rgba(239,68,68,0.2);
+}
+
+/* ds-canvas holds flex children by default; for overflow-x tables */
+.ds-canvas table { border-collapse: collapse; }
+.ds-canvas table th,
+.ds-canvas table td { border: none; }
+
+/* scrollbar in ds-log */
+.ds-log::-webkit-scrollbar { width: 4px; }
+.ds-log::-webkit-scrollbar-track { background: transparent; }
+.ds-log::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+
+/* StepControls wrapper sits nicely in ops panel */
+.ds-ops-panel .controls-panel {
+  margin-top: 0;
+  border-radius: 8px;
+}
+
